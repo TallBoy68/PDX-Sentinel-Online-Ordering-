@@ -622,12 +622,13 @@
       const age = formatAge(order.createdAt);
       const urgent = isUrgent(order.createdAt) && order.status !== "complete";
 
-      const itemsHtml = (order.items || []).map(i =>
-        `<div class="order-item-row">
-           <span class="order-item-name">${i.name}${i.vintage ? " '"+i.vintage.slice(-2)+"'" : ""}</span>
+      const itemsHtml = (order.items || []).map(i => {
+        const optionTag = i.option ? ` <span style="font-size:10px;opacity:0.45;letter-spacing:0.08em;text-transform:uppercase;">${i.option}</span>` : "";
+        return `<div class="order-item-row">
+           <span class="order-item-name">${i.name}${i.vintage ? " '"+i.vintage.slice(-2)+"'" : ""}${optionTag}</span>
            <span class="order-item-qty">× ${i.qty}</span>
-         </div>`
-      ).join("");
+         </div>`;
+      }).join("");
 
       const notesHtml = order.notes
         ? `<div class="order-notes">${escapeHtml(order.notes)}</div>` : "";
