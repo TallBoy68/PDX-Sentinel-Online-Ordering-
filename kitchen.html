@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kitchen Display — Domaine Serene Portland Lounge</title>
+
+  <!-- Firebase v9 compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <style>
+    /* ─── DESIGN TOKENS ──────────────────────────────────────────── */
+    :root {
+      --navy:       #1F3864;
+      --navy-dark:  #162649;
+      --navy-light: #2a4a80;
+      --burgundy:   #7B2D00;
+      --gold:       #C9A84C;
+      --gold-light: #E8C97A;
+      --cream:      #FAF8F4;
+      --surface:    #FFFFFF;
+      --text:       #1a1a1a;
+      --muted:      #666;
+      --border:     rgba(0,0,0,0.08);
+
+      /* Status colors */
+      --status-new:        #1F3864;
+      --status-new-bg:     rgba(31,56,100,0.07);
+      --status-inprog:     #8a5e00;
+      --status-inprog-bg:  rgba(201,168,76,0.13);
+      --status-done:       #2d6a2d;
+      --status-done-bg:    rgba(45,106,45,0.08);
+
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.05);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: #0f1825;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── HEADER ──────────────────────────────────────────────────── */
+    .kds-header {
+      background: var(--navy-dark);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .kds-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .kds-logo-text {
+      font-size: 13px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .kds-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #3ec97a;
+      box-shadow: 0 0 6px #3ec97a;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    .kds-live {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+    }
+
+    .kds-clock {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.06em;
+    }
+
+    /* ─── STATS BAR ───────────────────────────────────────────────── */
+    .stats-bar {
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 10px 24px;
+      display: flex;
+      gap: 32px;
+      flex-shrink: 0;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-value.new-count  { color: var(--gold-light); }
+    .stat-value.done-count { color: #3ec97a; }
+
+    .stat-label {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+    }
+
+    /* ─── COLUMNS ─────────────────────────────────────────────────── */
+    .columns {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1px;
+      background: rgba(255,255,255,0.04);
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .column {
+      background: #111e2e;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .column-header {
+      padding: 14px 20px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .column-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .col-new    .column-title { color: var(--gold-light); }
+    .col-prog   .column-title { color: #e8a830; }
+    .col-done   .column-title { color: #3ec97a; }
+
+    .column-count {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.4);
+    }
+
+    .column-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+
+    .column-body::-webkit-scrollbar { width: 4px; }
+    .column-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+
+    .empty-state {
+      padding: 32px 16px;
+      text-align: center;
+      font-size: 12px;
+      color: rgba(255,255,255,0.18);
+      letter-spacing: 0.06em;
+    }
+
+    /* ─── ORDER CARD ──────────────────────────────────────────────── */
+    .order-card {
+      background: #1a2740;
+      border-radius: 10px;
+      border: 0.5px solid rgba(255,255,255,0.08);
+      overflow: hidden;
+      transition: transform 0.15s, box-shadow 0.15s;
+      animation: cardIn 0.3s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .order-card:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.24); }
+
+    .col-done .order-card {
+      background: #121d14;
+      border-color: rgba(62,201,122,0.08);
+      opacity: 0.7;
+    }
+
+    .order-card-header {
+      padding: 12px 14px 10px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      border-bottom: 0.5px solid rgba(255,255,255,0.06);
+    }
+
+    .order-room {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.01em;
+      line-height: 1;
+    }
+
+    .order-room-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      margin-top: 3px;
+    }
+
+    .order-time {
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    .order-age {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      margin-top: 3px;
+    }
+
+    .order-age.urgent { color: #ff7b7b; }
+
+    .order-items {
+      padding: 10px 14px;
+    }
+
+    .order-item-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 4px 0;
+      border-bottom: 0.5px solid rgba(255,255,255,0.04);
+      font-size: 13px;
+    }
+
+    .order-item-row:last-child { border-bottom: none; }
+
+    .order-item-name { color: rgba(255,255,255,0.8); flex: 1; }
+    .order-item-qty  { color: rgba(255,255,255,0.35); }
+
+    .order-notes {
+      margin: 4px 14px 10px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      font-style: italic;
+      line-height: 1.4;
+    }
+
+    .order-notes::before { content: "Note: "; font-style: normal; }
+
+    .order-total {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      padding: 0 14px 10px;
+    }
+
+    .order-actions {
+      padding: 8px 12px 10px;
+      display: flex;
+      gap: 6px;
+    }
+
+    .action-btn {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 7px;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: opacity 0.12s, transform 0.1s;
+    }
+
+    .action-btn:active { transform: scale(0.97); }
+
+    .btn-start    { background: rgba(201,168,76,0.15); color: var(--gold-light); }
+    .btn-start:hover { background: rgba(201,168,76,0.22); }
+
+    .btn-complete { background: rgba(62,201,122,0.13); color: #3ec97a; }
+    .btn-complete:hover { background: rgba(62,201,122,0.22); }
+
+    .btn-reopen   { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); }
+    .btn-reopen:hover { background: rgba(255,255,255,0.09); }
+
+    /* new-order flash on entire card */
+    .order-card.flash {
+      animation: cardIn 0.3s cubic-bezier(0.2,0,0,1), flashGold 0.8s ease-out;
+    }
+
+    @keyframes flashGold {
+      0%   { border-color: rgba(201,168,76,0.7); }
+      100% { border-color: rgba(255,255,255,0.08); }
+    }
+
+    /* ─── FIREBASE CONFIG NOTICE ───────────────────────────────────── */
+    .config-notice {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(255,200,0,0.12);
+      border: 1px solid rgba(255,200,0,0.3);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 12px;
+      color: rgba(255,220,100,0.9);
+      max-width: 280px;
+      display: none;
+    }
+
+    /* ─── DEMO INJECT BUTTON (hidden in production) ──────────────── */
+    .demo-btn {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 99px;
+      padding: 8px 18px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .demo-btn:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="kds-header">
+    <div class="kds-logo">
+      <span class="kds-logo-text">Portland Lounge — Kitchen Display</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:20px;">
+      <div class="kds-live">
+        <div class="kds-dot"></div>
+        Live
+      </div>
+      <span class="kds-clock" id="clock">--:--</span>
+    </div>
+  </header>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <span class="stat-value new-count" id="statNew">0</span>
+      <span class="stat-label">New</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value" style="color:#e8a830;" id="statProg">0</span>
+      <span class="stat-label">In Progress</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value done-count" id="statDone">0</span>
+      <span class="stat-label">Completed Today</span>
+    </div>
+  </div>
+
+  <!-- COLUMNS -->
+  <div class="columns">
+    <div class="column col-new">
+      <div class="column-header">
+        <span class="column-title">New Orders</span>
+        <span class="column-count" id="countNew">0</span>
+      </div>
+      <div class="column-body" id="colNew">
+        <div class="empty-state">No new orders</div>
+      </div>
+    </div>
+
+    <div class="column col-prog">
+      <div class="column-header">
+        <span class="column-title">In Progress</span>
+        <span class="column-count" id="countProg">0</span>
+      </div>
+      <div class="column-body" id="colProg">
+        <div class="empty-state">Nothing in progress</div>
+      </div>
+    </div>
+
+    <div class="column col-done">
+      <div class="column-header">
+        <span class="column-title">Completed</span>
+        <span class="column-count" id="countDone">0</span>
+      </div>
+      <div class="column-body" id="colDone">
+        <div class="empty-state">No completed orders</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase config notice (shown in demo mode) -->
+  <div class="config-notice" id="configNotice">
+    Demo mode — Firebase not configured.<br>
+    Edit FIREBASE_CONFIG to go live.
+  </div>
+
+  <!-- Demo inject button (remove in production) -->
+  <button class="demo-btn" id="demoBtn" onclick="injectDemoOrder()">+ Inject Demo Order</button>
+
+  <script>
+    /* ════════════════════════════════════════════════════════════════
+       FIREBASE CONFIGURATION — must match index.html exactly
+    ═══════════════════════════════════════════════════════════════════ */
+    const FIREBASE_CONFIG = {
+      apiKey:            "YOUR_API_KEY",
+      authDomain:        "YOUR_PROJECT.firebaseapp.com",
+      databaseURL:       "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+      projectId:         "YOUR_PROJECT_ID",
+      storageBucket:     "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId:             "YOUR_APP_ID"
+    };
+
+    /* ════════════════════════════════════════════════════════════════
+       APP STATE
+    ═══════════════════════════════════════════════════════════════════ */
+    let orders   = {};   // { firebaseKey: orderObject }
+    let db       = null;
+    let fbReady  = false;
+
+    /* ════════════════════════════════════════════════════════════════
+       CLOCK
+    ═══════════════════════════════════════════════════════════════════ */
+    function updateClock() {
+      document.getElementById("clock").textContent =
+        new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+    }
+    updateClock();
+    setInterval(updateClock, 10000);
+
+    // Age ticker — refreshes age display on cards every 30 seconds
+    setInterval(renderAll, 30000);
+
+    /* ════════════════════════════════════════════════════════════════
+       FIREBASE INIT
+    ═══════════════════════════════════════════════════════════════════ */
+    function initFirebase() {
+      try {
+        if (FIREBASE_CONFIG.apiKey === "YOUR_API_KEY") {
+          document.getElementById("configNotice").style.display = "block";
+          return;
+        }
+        firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.database();
+        fbReady = true;
+        listenToOrders();
+      } catch (e) {
+        console.error("Firebase init error:", e);
+        document.getElementById("configNotice").style.display = "block";
+      }
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       REAL-TIME LISTENER
+       Firebase calls onChildAdded for existing + new orders,
+       onChildChanged when status is updated.
+    ═══════════════════════════════════════════════════════════════════ */
+    function listenToOrders() {
+      const ref = db.ref("orders");
+
+      ref.on("child_added", snap => {
+        orders[snap.key] = { ...snap.val(), _key: snap.key, _isNew: true };
+        renderAll();
+        // Clear "new" flash flag after first render
+        setTimeout(() => { if (orders[snap.key]) orders[snap.key]._isNew = false; }, 1000);
+      });
+
+      ref.on("child_changed", snap => {
+        orders[snap.key] = { ...snap.val(), _key: snap.key };
+        renderAll();
+      });
+
+      ref.on("child_removed", snap => {
+        delete orders[snap.key];
+        renderAll();
+      });
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       STATUS UPDATES
+    ═══════════════════════════════════════════════════════════════════ */
+    function updateStatus(key, status) {
+      if (fbReady && db) {
+        db.ref("orders/" + key).update({ status });
+      } else {
+        // Demo mode — update locally
+        if (orders[key]) orders[key].status = status;
+        renderAll();
+      }
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       AGE FORMATTING
+    ═══════════════════════════════════════════════════════════════════ */
+    function formatAge(ts) {
+      const mins = Math.floor((Date.now() - ts) / 60000);
+      if (mins < 1)  return "Just now";
+      if (mins < 60) return mins + "m ago";
+      const hrs = Math.floor(mins / 60);
+      return hrs + "h " + (mins % 60) + "m ago";
+    }
+
+    function isUrgent(ts) {
+      return (Date.now() - ts) > 15 * 60 * 1000; // > 15 minutes
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       RENDER ALL ORDERS
+    ═══════════════════════════════════════════════════════════════════ */
+    function renderAll() {
+      const newOrders  = [];
+      const progOrders = [];
+      const doneOrders = [];
+
+      // Sort by createdAt ascending (oldest first in each column)
+      const sorted = Object.values(orders).sort((a, b) => a.createdAt - b.createdAt);
+
+      sorted.forEach(o => {
+        if      (o.status === "new")         newOrders.push(o);
+        else if (o.status === "in-progress") progOrders.push(o);
+        else if (o.status === "complete")    doneOrders.push(o);
+      });
+
+      renderColumn("colNew",  newOrders,  "No new orders");
+      renderColumn("colProg", progOrders, "Nothing in progress");
+      renderColumn("colDone", doneOrders.slice().reverse(), "No completed orders"); // newest done first
+
+      // Update counts
+      document.getElementById("countNew").textContent  = newOrders.length;
+      document.getElementById("countProg").textContent = progOrders.length;
+      document.getElementById("countDone").textContent = doneOrders.length;
+
+      document.getElementById("statNew").textContent  = newOrders.length;
+      document.getElementById("statProg").textContent = progOrders.length;
+      document.getElementById("statDone").textContent = doneOrders.length;
+    }
+
+    function renderColumn(colId, orderList, emptyMsg) {
+      const col = document.getElementById(colId);
+      col.innerHTML = "";
+
+      if (orderList.length === 0) {
+        col.innerHTML = `<div class="empty-state">${emptyMsg}</div>`;
+        return;
+      }
+
+      orderList.forEach(order => {
+        const card = buildCard(order);
+        col.appendChild(card);
+      });
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       BUILD ORDER CARD
+    ═══════════════════════════════════════════════════════════════════ */
+    function buildCard(order) {
+      const card = document.createElement("div");
+      card.className = "order-card" + (order._isNew ? " flash" : "");
+      card.id = "card-" + order._key;
+
+      const time = new Date(order.createdAt).toLocaleTimeString("en-US",
+        { hour: "2-digit", minute: "2-digit", hour12: true });
+      const age = formatAge(order.createdAt);
+      const urgent = isUrgent(order.createdAt) && order.status !== "complete";
+
+      const itemsHtml = (order.items || []).map(i =>
+        `<div class="order-item-row">
+           <span class="order-item-name">${i.name}${i.vintage ? " '"+i.vintage.slice(-2)+"'" : ""}</span>
+           <span class="order-item-qty">× ${i.qty}</span>
+         </div>`
+      ).join("");
+
+      const notesHtml = order.notes
+        ? `<div class="order-notes">${escapeHtml(order.notes)}</div>` : "";
+
+      // Action buttons per status
+      let actionsHtml = "";
+      if (order.status === "new") {
+        actionsHtml = `
+          <button class="action-btn btn-start"    onclick="updateStatus('${order._key}', 'in-progress')">Start</button>
+          <button class="action-btn btn-complete" onclick="updateStatus('${order._key}', 'complete')">Complete</button>
+        `;
+      } else if (order.status === "in-progress") {
+        actionsHtml = `
+          <button class="action-btn btn-complete" onclick="updateStatus('${order._key}', 'complete')">Mark Complete</button>
+          <button class="action-btn btn-reopen"   onclick="updateStatus('${order._key}', 'new')">Reopen</button>
+        `;
+      } else if (order.status === "complete") {
+        actionsHtml = `
+          <button class="action-btn btn-reopen" onclick="updateStatus('${order._key}', 'in-progress')">Reopen</button>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="order-card-header">
+          <div>
+            <div class="order-room">${escapeHtml(order.room)}</div>
+            <div class="order-room-label">Room</div>
+          </div>
+          <div class="order-time">
+            ${time}
+            <span class="order-age${urgent ? " urgent" : ""}">${age}</span>
+          </div>
+        </div>
+        <div class="order-items">${itemsHtml}</div>
+        ${notesHtml}
+        <div class="order-total">$${(order.total || 0).toFixed(2)}</div>
+        <div class="order-actions">${actionsHtml}</div>
+      `;
+
+      return card;
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       DEMO MODE — inject a fake order for testing without Firebase
+    ═══════════════════════════════════════════════════════════════════ */
+    const demoRooms = ["412", "207", "318", "505", "110"];
+    const demoItems = [
+      [{ id:"wg-01", name:"Evenstad Reserve Pinot Noir", vintage:"2021", price:28, qty:2 },
+       { id:"fd-01", name:"Artisan Cheese Board",        vintage:"",     price:22, qty:1 }],
+      [{ id:"wb-03", name:"Evenstad Reserve Chardonnay", vintage:"2022", price:95, qty:1 }],
+      [{ id:"wg-04", name:"Rockblock Syrah",             vintage:"2020", price:24, qty:1 },
+       { id:"fd-03", name:"Warm Mixed Olives",           vintage:"",     price:12, qty:2 }],
+    ];
+
+    let demoCounter = 0;
+
+    function injectDemoOrder() {
+      const items = demoItems[demoCounter % demoItems.length];
+      const room  = demoRooms[demoCounter % demoRooms.length];
+      const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+      const key   = "demo-" + Date.now();
+
+      orders[key] = {
+        room,
+        items,
+        notes: demoCounter === 0 ? "No cork — please decant if possible" : "",
+        total,
+        status:      "new",
+        createdAt:   Date.now(),
+        createdAtISO: new Date().toISOString(),
+        _key: key,
+        _isNew: true
+      };
+
+      demoCounter++;
+      renderAll();
+      setTimeout(() => { if (orders[key]) orders[key]._isNew = false; }, 1000);
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       UTILITY
+    ═══════════════════════════════════════════════════════════════════ */
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       BOOT
+    ═══════════════════════════════════════════════════════════════════ */
+    initFirebase();
+    renderAll(); // Show empty state immediately
+  </script>
+</body>
+</html>

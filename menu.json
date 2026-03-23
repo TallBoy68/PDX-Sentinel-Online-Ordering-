@@ -1,0 +1,270 @@
+{
+  "categories": [
+    {
+      "id": "wine",
+      "label": "Wine",
+      "priceHeader": "Glass | Bottle",
+      "items": [
+        {
+          "id": "w-01",
+          "name": "Domaine Serene, 'r' XVI",
+          "vintage": "NV",
+          "varietal": "Rosé",
+          "description": "",
+          "score": "",
+          "priceGlass": 14,
+          "priceBottle": 44,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "w-02",
+          "name": "Domaine Serene, Étoile Vineyard",
+          "vintage": "2022",
+          "varietal": "Chardonnay",
+          "description": "",
+          "score": "96 Points — Jeb Dunnuck",
+          "priceGlass": 24,
+          "priceBottle": 95,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "w-03",
+          "name": "Domaine Serene, 'Evenstad Reserve'",
+          "vintage": "2022",
+          "varietal": "Pinot Noir",
+          "description": "",
+          "score": "94 Points — Decanter",
+          "priceGlass": 24,
+          "priceBottle": 95,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "w-04",
+          "name": "Domaine Serene, 'Grand Cheval'",
+          "vintage": "2022",
+          "varietal": "Oregon Red Wine, Walla Walla & Dundee Hills",
+          "description": "",
+          "score": "",
+          "priceGlass": 24,
+          "priceBottle": 85,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "w-05",
+          "name": "Domaine Serene, Clos de Lune Vineyard",
+          "vintage": "2022",
+          "varietal": "Chardonnay",
+          "description": "",
+          "score": "94 Points — Decanter",
+          "priceGlass": 24,
+          "priceBottle": 85,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "w-06",
+          "name": "Domaine Serene, Triple 'S' Vineyard",
+          "vintage": "2022",
+          "varietal": "Pinot Noir",
+          "description": "",
+          "score": "96 Points — Owen Bargreen",
+          "priceGlass": 29,
+          "priceBottle": 115,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "w-07",
+          "name": "Domaine Serene, Winery Hill Vineyard",
+          "vintage": "2022",
+          "varietal": "Pinot Noir",
+          "description": "",
+          "score": "",
+          "priceGlass": 29,
+          "priceBottle": 115,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "w-08",
+          "name": "Maison Evenstad, Meursault",
+          "vintage": "2021",
+          "varietal": "Chardonnay",
+          "description": "",
+          "score": "",
+          "priceGlass": 24,
+          "priceBottle": 85,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "w-09",
+          "name": "Maison Evenstad, Santenay Premier Cru Beaurepaire",
+          "vintage": "2022",
+          "varietal": "Pinot Noir",
+          "description": "",
+          "score": "",
+          "priceGlass": 29,
+          "priceBottle": 115,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "w-10",
+          "name": "Château de la Crée, Santenay Premier Cru Clos Faubard",
+          "vintage": "2020",
+          "varietal": "Pinot Noir",
+          "description": "",
+          "score": "",
+          "priceGlass": 34,
+          "priceBottle": 125,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "w-11",
+          "name": "Domaine Serene, 'Evenstad Reserve' Brut",
+          "vintage": "M.V. 1",
+          "varietal": "Dundee Hills Sparkling Wine",
+          "description": "",
+          "score": "93 Points — International Wine Report",
+          "priceGlass": 24,
+          "priceBottle": 85,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "w-12",
+          "name": "Domaine Serene, 'Evenstad Reserve' Brut Rosé",
+          "vintage": "M.V. 5",
+          "varietal": "Dundee Hills Sparkling Wine",
+          "description": "",
+          "score": "",
+          "priceGlass": 29,
+          "priceBottle": 105,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "w-13",
+          "name": "Domaine Serene, 'Fleur de Vie' Demi-Sec",
+          "vintage": "M.V. 5",
+          "varietal": "Dundee Hills Sparkling Wine",
+          "description": "",
+          "score": "",
+          "priceGlass": 24,
+          "priceBottle": 80,
+          "priceLabel": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "food",
+      "label": "Food",
+      "priceHeader": "",
+      "items": [
+        {
+          "id": "fd-01",
+          "name": "Taylor Shellfish Oysters",
+          "vintage": "",
+          "varietal": "",
+          "description": "Chardonnay mignonette & lemon. Pairs beautifully with our Sparkling wines.",
+          "score": "",
+          "priceGlass": 26,
+          "priceBottle": 54,
+          "priceLabel": "Half Dozen | Dozen",
+          "image": ""
+        },
+        {
+          "id": "fd-02",
+          "name": "Artisan Bread",
+          "vintage": "",
+          "varietal": "",
+          "description": "French butter & Maldon sea salt.",
+          "score": "",
+          "priceGlass": 11,
+          "priceBottle": null,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "fd-03",
+          "name": "Olives",
+          "vintage": "",
+          "varietal": "",
+          "description": "EVOO & Maldon sea salt Castelvetrano olives.",
+          "score": "",
+          "priceGlass": 12,
+          "priceBottle": null,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "fd-04",
+          "name": "Burrata",
+          "vintage": "",
+          "varietal": "",
+          "description": "Olivewood balsamic, EVOO & Maldon sea salt.",
+          "score": "",
+          "priceGlass": 18,
+          "priceBottle": null,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "fd-05",
+          "name": "Cured Meats",
+          "vintage": "",
+          "varietal": "",
+          "description": "Selection of charcuterie & seasonal accompaniments.",
+          "score": "",
+          "priceGlass": 28,
+          "priceBottle": null,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "fd-06",
+          "name": "Artisan Cheeses",
+          "vintage": "",
+          "varietal": "",
+          "description": "Assorted farmstead cheeses, seasonal jams & accompaniments.",
+          "score": "",
+          "priceGlass": 26,
+          "priceBottle": null,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "fd-07",
+          "name": "Tinned Fish",
+          "vintage": "",
+          "varietal": "",
+          "description": "French butter & Maldon sea salt, baguette & accompaniments.",
+          "score": "",
+          "priceGlass": 21,
+          "priceBottle": null,
+          "priceLabel": "",
+          "image": ""
+        },
+        {
+          "id": "fd-08",
+          "name": "Missionary Chocolate Truffles",
+          "vintage": "",
+          "varietal": "",
+          "description": "Pinot Noir salted caramel and lavender chocolate.",
+          "score": "",
+          "priceGlass": 16,
+          "priceBottle": null,
+          "priceLabel": "",
+          "image": ""
+        }
+      ]
+    }
+  ]
+}
