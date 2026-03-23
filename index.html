@@ -281,6 +281,47 @@
       padding-top: 2px;
     }
 
+    /* ─── TOGGLE (Glass|Bottle, Half|Full) ─────────────────────────── */
+    .option-toggle {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .toggle-btn {
+      padding: 5px 10px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      background: var(--cream);
+      color: var(--text-muted);
+      border: none;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+      white-space: nowrap;
+    }
+
+    .toggle-btn:not(:last-child) {
+      border-right: 1px solid var(--border);
+    }
+
+    .toggle-btn.active {
+      background: var(--navy);
+      color: #fff;
+    }
+
+    /* Active price shown below toggle */
+    .active-price {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--navy);
+      text-align: right;
+    }
+
     .qty-row {
       display: flex;
       align-items: center;
@@ -864,51 +905,68 @@
           card.className = "item-card";
           card.id = "card-" + item.id;
 
-          // Vintage & varietal line
-          const vintageHtml = item.vintage
-            ? `<div class="item-vintage">${item.vintage}</div>` : "";
-          const varietalHtml = item.varietal
-            ? `<div class="item-varietal">${item.varietal}</div>` : "";
+          // Vintage & varietal
+          const vintageHtml  = item.vintage  ? `<div class="item-vintage">${item.vintage}</div>`   : "";
+          const varietalHtml = item.varietal ? `<div class="item-varietal">${item.varietal}</div>` : "";
+          const scoreHtml    = item.score    ? `<div class="item-score">${item.score}</div>`       : "";
+          const descHtml     = item.description ? `<div class="item-desc">${item.description}</div>` : "";
 
-          // Critic score
-          const scoreHtml = item.score
-            ? `<div class="item-score">${item.score}</div>` : "";
+          // Determine if this item has a dual-option toggle
+          const hasDual = item.priceBottle !== null && item.priceBottle !== undefined;
 
-          // Description (food items mainly)
-          const descHtml = item.description
-            ? `<div class="item-desc">${item.description}</div>` : "";
+          // Label for toggle buttons
+          const labelA = item.priceLabel ? item.priceLabel.split("|")[0].trim() : "Glass";
+          const labelB = item.priceLabel ? item.priceLabel.split("|")[1].trim() : "Bottle";
 
-          // Price display — dual (glass|bottle) or single
-          // priceLabel overrides the default "Glass | Bottle" label for special items (oysters)
-          let priceHtml;
-          if (item.priceBottle !== null && item.priceBottle !== undefined) {
-            const label = item.priceLabel || cat.priceHeader || "";
-            priceHtml = `<div class="item-price">$${item.priceGlass}<span class="item-price-separator">|</span>$${item.priceBottle}</div>`;
-            if (item.priceLabel) {
-              // e.g. "Half Dozen | Dozen" for oysters — show as label instead of Glass|Bottle
-              priceHtml = `<div class="item-price" style="font-size:13px;">$${item.priceGlass}<span class="item-price-separator">|</span>$${item.priceBottle}</div>
-                           <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-light);margin-top:2px;">${item.priceLabel}</div>`;
-            }
+          // Cart key suffixes for the two options
+          const keyA = item.id + "__a";  // glass or half-dozen
+          const keyB = item.id + "__b";  // bottle or full dozen
+
+          let priceDisplayHtml, controlsHtml;
+
+          if (hasDual) {
+            // Show both prices in info section
+            priceDisplayHtml = `
+              <div class="item-price">
+                $${item.priceGlass}<span class="item-price-separator">|</span>$${item.priceBottle}
+              </div>`;
+
+            // Controls: toggle + qty for each option
+            controlsHtml = `
+              <div class="item-controls">
+                <div class="option-toggle" id="toggle-${item.id}">
+                  <button class="toggle-btn active" id="tab-a-${item.id}"
+                    onclick="selectOption('${item.id}', 'a', event)">${labelA}</button>
+                  <button class="toggle-btn" id="tab-b-${item.id}"
+                    onclick="selectOption('${item.id}', 'b', event)">${labelB}</button>
+                </div>
+                <div class="active-price" id="activeprice-${item.id}">$${item.priceGlass}</div>
+                <div class="qty-row">
+                  <button class="qty-btn" aria-label="Decrease" onclick="changeQtyKeyed('${item.id}', -1, event)">−</button>
+                  <span class="qty-display" id="qty-${item.id}">0</span>
+                  <button class="qty-btn" aria-label="Increase" onclick="changeQtyKeyed('${item.id}', +1, event)">+</button>
+                </div>
+              </div>`;
           } else {
-            priceHtml = `<div class="item-price">$${item.priceGlass}</div>`;
+            // Single-price food item — simple +/- only
+            priceDisplayHtml = `<div class="item-price">$${item.priceGlass}</div>`;
+            controlsHtml = `
+              <div class="item-controls">
+                <div class="qty-row">
+                  <button class="qty-btn" aria-label="Decrease" onclick="changeQty('${item.id}', -1, event)">−</button>
+                  <span class="qty-display" id="qty-${item.id}">0</span>
+                  <button class="qty-btn" aria-label="Increase" onclick="changeQty('${item.id}', +1, event)">+</button>
+                </div>
+              </div>`;
           }
 
           card.innerHTML = `
             <div class="item-info">
               <div class="item-name">${item.name}</div>
-              ${vintageHtml}
-              ${varietalHtml}
-              ${scoreHtml}
-              ${descHtml}
-              ${priceHtml}
+              ${vintageHtml}${varietalHtml}${scoreHtml}${descHtml}
+              ${priceDisplayHtml}
             </div>
-            <div class="item-controls">
-              <div class="qty-row">
-                <button class="qty-btn" aria-label="Decrease" onclick="changeQty('${item.id}', -1, event)">−</button>
-                <span class="qty-display" id="qty-${item.id}">0</span>
-                <button class="qty-btn" aria-label="Increase" onclick="changeQty('${item.id}', +1, event)">+</button>
-              </div>
-            </div>
+            ${controlsHtml}
           `;
           section.appendChild(card);
         });
@@ -950,23 +1008,83 @@
 
     /* ════════════════════════════════════════════════════════════════
        CART LOGIC
+       ────────────────────────────────────────────────────────────────
+       cart keys:
+         "fd-01"       → simple food item, value = qty (number)
+         "w-01__a"     → wine glass / oyster half-dozen, value = qty
+         "w-01__b"     → wine bottle / oyster full dozen, value = qty
+       selectedOption tracks which toggle is active per item id.
     ═══════════════════════════════════════════════════════════════════ */
+    const selectedOption = {};  // { itemId: 'a' | 'b' }
+
     function findItem(id) {
+      // id may be "w-01" or "w-01__a" — strip suffix to find base item
+      const baseId = id.replace(/__[ab]$/, "");
       for (const cat of menu) {
-        const found = cat.items.find(i => i.id === id);
+        const found = cat.items.find(i => i.id === baseId);
         if (found) return found;
       }
       return null;
     }
 
-    function changeQty(id, delta, evt) {
+    function getActiveOption(itemId) {
+      return selectedOption[itemId] || "a";
+    }
+
+    function getCartKey(itemId) {
+      const item = findItem(itemId);
+      if (!item || item.priceBottle === null || item.priceBottle === undefined) {
+        return itemId; // food: no suffix
+      }
+      return itemId + "__" + getActiveOption(itemId);
+    }
+
+    function getPriceForKey(cartKey) {
+      const item = findItem(cartKey);
+      if (!item) return 0;
+      if (cartKey.endsWith("__b")) return item.priceBottle || 0;
+      return item.priceGlass || 0;
+    }
+
+    /* Toggle glass ↔ bottle (or half ↔ full dozen) */
+    function selectOption(itemId, option, evt) {
       evt && evt.stopPropagation();
-      cart[id] = Math.max(0, (cart[id] || 0) + delta);
-      if (cart[id] === 0) delete cart[id];
+      selectedOption[itemId] = option;
 
-      const el = document.getElementById("qty-" + id);
-      if (el) el.textContent = cart[id] || 0;
+      // Update toggle button active states
+      document.getElementById("tab-a-" + itemId).classList.toggle("active", option === "a");
+      document.getElementById("tab-b-" + itemId).classList.toggle("active", option === "b");
 
+      // Update displayed active price
+      const item = findItem(itemId);
+      const price = option === "a" ? item.priceGlass : item.priceBottle;
+      document.getElementById("activeprice-" + itemId).textContent = "$" + price;
+
+      // Update qty display to reflect whichever option is now active
+      const cartKey = itemId + "__" + option;
+      const qty = cart[cartKey] || 0;
+      document.getElementById("qty-" + itemId).textContent = qty;
+    }
+
+    /* +/- for dual-option (wine/oyster) items */
+    function changeQtyKeyed(itemId, delta, evt) {
+      evt && evt.stopPropagation();
+      const cartKey = getCartKey(itemId);
+      cart[cartKey] = Math.max(0, (cart[cartKey] || 0) + delta);
+      if (cart[cartKey] === 0) delete cart[cartKey];
+
+      // Update qty display
+      document.getElementById("qty-" + itemId).textContent = cart[cartKey] || 0;
+      updateCartUI();
+    }
+
+    /* +/- for simple food items */
+    function changeQty(itemId, delta, evt) {
+      evt && evt.stopPropagation();
+      cart[itemId] = Math.max(0, (cart[itemId] || 0) + delta);
+      if (cart[itemId] === 0) delete cart[itemId];
+
+      document.getElementById("qty-" + itemId).textContent = cart[itemId] || 0;
       updateCartUI();
     }
 
@@ -976,10 +1094,8 @@
 
     function totalPrice() {
       let total = 0;
-      for (const [id, qty] of Object.entries(cart)) {
-        const item = findItem(id);
-        // Use priceGlass as the per-unit price (covers both wine glasses and food items)
-        if (item) total += (item.priceGlass || 0) * qty;
+      for (const [key, qty] of Object.entries(cart)) {
+        total += getPriceForKey(key) * qty;
       }
       return total;
     }
@@ -996,7 +1112,7 @@
       btnEl.disabled = count === 0;
       totalEl.textContent = "$" + price.toFixed(2);
 
-      // Bump animation
+      // Bump animation on cart badge
       countEl.classList.remove("bump");
       void countEl.offsetWidth;
       countEl.classList.add("bump");
@@ -1029,20 +1145,31 @@
       const container = document.getElementById("cartLines");
       container.innerHTML = "";
 
-      for (const [id, qty] of Object.entries(cart)) {
-        const item = findItem(id);
+      for (const [cartKey, qty] of Object.entries(cart)) {
+        const item = findItem(cartKey);
         if (!item) continue;
+
         const row = document.createElement("div");
         row.className = "cart-item-row";
 
-        // Build display name: wine items show vintage, food items show as-is
+        // Build display name
         let displayName = item.name;
         if (item.vintage) displayName += " " + item.vintage;
+
+        // Append option label for dual-option items
+        if (cartKey.endsWith("__a") || cartKey.endsWith("__b")) {
+          const isB = cartKey.endsWith("__b");
+          const labelA = item.priceLabel ? item.priceLabel.split("|")[0].trim() : "Glass";
+          const labelB = item.priceLabel ? item.priceLabel.split("|")[1].trim() : "Bottle";
+          displayName += " — " + (isB ? labelB : labelA);
+        }
+
+        const unitPrice = getPriceForKey(cartKey);
 
         row.innerHTML = `
           <span class="cart-item-name">${displayName}</span>
           <span class="cart-item-qty">× ${qty}</span>
-          <span class="cart-item-line">$${((item.priceGlass || 0) * qty).toFixed(2)}</span>
+          <span class="cart-item-line">$${(unitPrice * qty).toFixed(2)}</span>
         `;
         container.appendChild(row);
       }
@@ -1070,16 +1197,27 @@
 
       const notes = document.getElementById("notesInput").value.trim();
 
-      // Build order payload
+      // Build order payload — one line per cart key (glass/bottle are separate entries)
       const items = [];
-      for (const [id, qty] of Object.entries(cart)) {
-        const item = findItem(id);
-        if (item) items.push({
-          id,
-          name: item.name,
+      for (const [cartKey, qty] of Object.entries(cart)) {
+        const item = findItem(cartKey);
+        if (!item) continue;
+
+        const isB = cartKey.endsWith("__b");
+        const hasDual = item.priceBottle !== null && item.priceBottle !== undefined;
+        const labelA = item.priceLabel ? item.priceLabel.split("|")[0].trim() : "Glass";
+        const labelB = item.priceLabel ? item.priceLabel.split("|")[1].trim() : "Bottle";
+
+        let option = "";
+        if (hasDual) option = isB ? labelB : labelA;
+
+        items.push({
+          id:       item.id,
+          name:     item.name,
           vintage:  item.vintage  || "",
           varietal: item.varietal || "",
-          price: item.priceGlass || 0,
+          option,                          // "Glass", "Bottle", "Half Dozen", "Dozen", or ""
+          price:    getPriceForKey(cartKey),
           qty
         });
       }
@@ -1132,13 +1270,28 @@
 
     function resetApp() {
       cart = {};
+      // Reset toggle selections
+      Object.keys(selectedOption).forEach(k => delete selectedOption[k]);
+
       document.getElementById("roomInput").value = "";
       document.getElementById("notesInput").value = "";
       document.getElementById("submitBtn").disabled = false;
       document.getElementById("submitBtn").textContent = "Place Order";
 
-      // Reset qty displays
+      // Reset all qty displays to 0
       document.querySelectorAll(".qty-display").forEach(el => el.textContent = "0");
+
+      // Reset all toggles back to option A (Glass / Half Dozen)
+      document.querySelectorAll(".toggle-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.id.startsWith("tab-a-"));
+      });
+
+      // Reset active price displays back to glass price
+      menu.forEach(cat => cat.items.forEach(item => {
+        const el = document.getElementById("activeprice-" + item.id);
+        if (el) el.textContent = "$" + item.priceGlass;
+      }));
+
       updateCartUI();
 
       document.getElementById("confirmScreen").classList.remove("visible");
