@@ -598,13 +598,22 @@
 
     function renderColumn(colId, orderList, emptyMsg) {
       const col = document.getElementById(colId);
-      col.innerHTML = "";
+
+      // Remove cards that no longer belong here
+      col.querySelectorAll(".order-card").forEach(el => el.remove());
 
       if (orderList.length === 0) {
-        col.innerHTML = `<div class="empty-state">${emptyMsg}</div>`;
+        if (!col.querySelector(".empty-state")) {
+          col.innerHTML = `<div class="empty-state">${emptyMsg}</div>`;
+        }
         return;
       }
 
+      // Remove empty state if present
+      const empty = col.querySelector(".empty-state");
+      if (empty) empty.remove();
+
+      // Append freshly built cards (with live event listeners)
       orderList.forEach(order => {
         const card = buildCard(order);
         col.appendChild(card);
