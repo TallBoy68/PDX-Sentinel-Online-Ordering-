@@ -612,6 +612,16 @@
     /* ════════════════════════════════════════════════════════════════
        BUILD ORDER CARD
     ═══════════════════════════════════════════════════════════════════ */
+    function makeActionBtn(label, cssClass, key, status) {
+      const btn = document.createElement("button");
+      btn.className = "action-btn " + cssClass;
+      btn.textContent = label;
+      btn.addEventListener("click", function() {
+        updateStatus(key, status);
+      });
+      return btn;
+    }
+
     function buildCard(order) {
       const card = document.createElement("div");
       card.className = "order-card" + (order._isNew ? " flash" : "");
@@ -619,11 +629,13 @@
 
       const time = new Date(order.createdAt).toLocaleTimeString("en-US",
         { hour: "2-digit", minute: "2-digit", hour12: true });
-      const age = formatAge(order.createdAt);
+      const age    = formatAge(order.createdAt);
       const urgent = isUrgent(order.createdAt) && order.status !== "complete";
 
       const itemsHtml = (order.items || []).map(i => {
-        const optionTag = i.option ? ` <span style="font-size:10px;opacity:0.45;letter-spacing:0.08em;text-transform:uppercase;">${i.option}</span>` : "";
+        const optionTag = i.option
+          ? ` <span style="font-size:10px;opacity:0.45;letter-spacing:0.08em;text-transform:uppercase;">${i.option}</span>`
+          : "";
         return `<div class="order-item-row">
            <span class="order-item-name">${i.name}${i.vintage ? " '"+i.vintage.slice(-2)+"'" : ""}${optionTag}</span>
            <span class="order-item-qty">× ${i.qty}</span>
@@ -633,25 +645,7 @@
       const notesHtml = order.notes
         ? `<div class="order-notes">${escapeHtml(order.notes)}</div>` : "";
 
-      // Action buttons — use data-key and data-status attributes instead of inline onclick
-      // to avoid Firebase key characters (dashes, underscores) breaking the HTML attribute string
-      let actionsHtml = "";
-      if (order.status === "new") {
-        actionsHtml = `
-          <button class="action-btn btn-start"    data-key="${order._key}" data-status="in-progress">Start</button>
-          <button class="action-btn btn-complete" data-key="${order._key}" data-status="complete">Complete</button>
-        `;
-      } else if (order.status === "in-progress") {
-        actionsHtml = `
-          <button class="action-btn btn-complete" data-key="${order._key}" data-status="complete">Mark Complete</button>
-          <button class="action-btn btn-reopen"   data-key="${order._key}" data-status="new">Reopen</button>
-        `;
-      } else if (order.status === "complete") {
-        actionsHtml = `
-          <button class="action-btn btn-reopen" data-key="${order._key}" data-status="in-progress">Reopen</button>
-        `;
-      }
-
+      // Build card shell via innerHTML (no buttons yet)
       card.innerHTML = `
         <div class="order-card-header">
           <div>
@@ -666,8 +660,21 @@
         <div class="order-items">${itemsHtml}</div>
         ${notesHtml}
         <div class="order-total">$${(order.total || 0).toFixed(2)}</div>
-        <div class="order-actions">${actionsHtml}</div>
+        <div class="order-actions"></div>
       `;
+
+      // Attach action buttons as real DOM elements with direct event listeners
+      const actionsDiv = card.querySelector(".order-actions");
+
+      if (order.status === "new") {
+        actionsDiv.appendChild(makeActionBtn("Start",    "btn-start",    order._key, "in-progress"));
+        actionsDiv.appendChild(makeActionBtn("Complete", "btn-complete", order._key, "complete"));
+      } else if (order.status === "in-progress") {
+        actionsDiv.appendChild(makeActionBtn("Mark Complete", "btn-complete", order._key, "complete"));
+        actionsDiv.appendChild(makeActionBtn("Reopen",        "btn-reopen",   order._key, "new"));
+      } else if (order.status === "complete") {
+        actionsDiv.appendChild(makeActionBtn("Reopen", "btn-reopen", order._key, "in-progress"));
+      }
 
       return card;
     }
@@ -724,22 +731,7 @@
        BOOT
     ═══════════════════════════════════════════════════════════════════ */
     initFirebase();
-    renderAll(); // Show empty state immediately
-
-    /* ════════════════════════════════════════════════════════════════
-       EVENT DELEGATION FOR ACTION BUTTONS
-       Must run after DOM is ready so .columns element exists.
-       Handles clicks on Start / Complete / Reopen across all cards.
-       Using data attributes avoids Firebase key characters breaking
-       inline onclick strings.
-    ═══════════════════════════════════════════════════════════════════ */
-    document.querySelector(".columns").addEventListener("click", function(e) {
-      const btn = e.target.closest(".action-btn");
-      if (!btn) return;
-      const key    = btn.getAttribute("data-key");
-      const status = btn.getAttribute("data-status");
-      if (key && status) updateStatus(key, status);
-    });
+    renderAll();
   </script>
 </body>
 </html>
