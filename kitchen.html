@@ -721,7 +721,14 @@
     }
 
     /* ════════════════════════════════════════════════════════════════
+       BOOT
+    ═══════════════════════════════════════════════════════════════════ */
+    initFirebase();
+    renderAll(); // Show empty state immediately
+
+    /* ════════════════════════════════════════════════════════════════
        EVENT DELEGATION FOR ACTION BUTTONS
+       Must run after DOM is ready so .columns element exists.
        Handles clicks on Start / Complete / Reopen across all cards.
        Using data attributes avoids Firebase key characters breaking
        inline onclick strings.
@@ -733,12 +740,6 @@
       const status = btn.getAttribute("data-status");
       if (key && status) updateStatus(key, status);
     });
-
-    /* ════════════════════════════════════════════════════════════════
-       BOOT
-    ═══════════════════════════════════════════════════════════════════ */
-    initFirebase();
-    renderAll(); // Show empty state immediately
   </script>
 </body>
 </html>
