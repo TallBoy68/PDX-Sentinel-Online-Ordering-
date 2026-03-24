@@ -461,13 +461,13 @@
        FIREBASE CONFIGURATION — must match index.html exactly
     ═══════════════════════════════════════════════════════════════════ */
     const FIREBASE_CONFIG = {
-  	apiKey: "AIzaSyCEx7vzUxn6AoVjvnofdBVnLmpp1U-qV9o",
-  	authDomain: "ds-portland-lounge.firebaseapp.com",
-  	projectId: "ds-portland-lounge",
-  	storageBucket: "ds-portland-lounge.firebasestorage.app",
-  	messagingSenderId: "990561515374",
-  	appId: "1:990561515374:web:fb11aecc6368b1e224f37f",
-  	measurementId: "G-H5QNJMD78C"
+      apiKey:            "YOUR_API_KEY",
+      authDomain:        "YOUR_PROJECT.firebaseapp.com",
+      databaseURL:       "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+      projectId:         "YOUR_PROJECT_ID",
+      storageBucket:     "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId:             "YOUR_APP_ID"
     };
 
     /* ════════════════════════════════════════════════════════════════
@@ -633,21 +633,22 @@
       const notesHtml = order.notes
         ? `<div class="order-notes">${escapeHtml(order.notes)}</div>` : "";
 
-      // Action buttons per status
+      // Action buttons — use data-key and data-status attributes instead of inline onclick
+      // to avoid Firebase key characters (dashes, underscores) breaking the HTML attribute string
       let actionsHtml = "";
       if (order.status === "new") {
         actionsHtml = `
-          <button class="action-btn btn-start"    onclick="updateStatus('${order._key}', 'in-progress')">Start</button>
-          <button class="action-btn btn-complete" onclick="updateStatus('${order._key}', 'complete')">Complete</button>
+          <button class="action-btn btn-start"    data-key="${order._key}" data-status="in-progress">Start</button>
+          <button class="action-btn btn-complete" data-key="${order._key}" data-status="complete">Complete</button>
         `;
       } else if (order.status === "in-progress") {
         actionsHtml = `
-          <button class="action-btn btn-complete" onclick="updateStatus('${order._key}', 'complete')">Mark Complete</button>
-          <button class="action-btn btn-reopen"   onclick="updateStatus('${order._key}', 'new')">Reopen</button>
+          <button class="action-btn btn-complete" data-key="${order._key}" data-status="complete">Mark Complete</button>
+          <button class="action-btn btn-reopen"   data-key="${order._key}" data-status="new">Reopen</button>
         `;
       } else if (order.status === "complete") {
         actionsHtml = `
-          <button class="action-btn btn-reopen" onclick="updateStatus('${order._key}', 'in-progress')">Reopen</button>
+          <button class="action-btn btn-reopen" data-key="${order._key}" data-status="in-progress">Reopen</button>
         `;
       }
 
@@ -718,6 +719,20 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
     }
+
+    /* ════════════════════════════════════════════════════════════════
+       EVENT DELEGATION FOR ACTION BUTTONS
+       Handles clicks on Start / Complete / Reopen across all cards.
+       Using data attributes avoids Firebase key characters breaking
+       inline onclick strings.
+    ═══════════════════════════════════════════════════════════════════ */
+    document.querySelector(".columns").addEventListener("click", function(e) {
+      const btn = e.target.closest(".action-btn");
+      if (!btn) return;
+      const key    = btn.getAttribute("data-key");
+      const status = btn.getAttribute("data-status");
+      if (key && status) updateStatus(key, status);
+    });
 
     /* ════════════════════════════════════════════════════════════════
        BOOT
