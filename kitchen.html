@@ -317,24 +317,25 @@
       flex: 1;
       padding: 8px 10px;
       border-radius: 7px;
-      border: none;
+      border: 1px solid rgba(255,255,255,0.15);
       font-size: 12px;
       font-weight: 600;
       letter-spacing: 0.03em;
       cursor: pointer;
-      transition: opacity 0.12s, transform 0.1s;
+      transition: opacity 0.15s, transform 0.1s;
+      color: #ffffff;
     }
 
     .action-btn:active { transform: scale(0.97); }
 
-    .btn-start    { background: rgba(201,168,76,0.15); color: var(--gold-light); }
-    .btn-start:hover { background: rgba(201,168,76,0.22); }
+    .btn-start    { background: #6b4f10; border-color: #C9A84C; color: #E8C97A; }
+    .btn-start:hover { background: #7d5c12; }
 
-    .btn-complete { background: rgba(62,201,122,0.13); color: #3ec97a; }
-    .btn-complete:hover { background: rgba(62,201,122,0.22); }
+    .btn-complete { background: #0f4a28; border-color: #3ec97a; color: #3ec97a; }
+    .btn-complete:hover { background: #145c32; }
 
-    .btn-reopen   { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); }
-    .btn-reopen:hover { background: rgba(255,255,255,0.09); }
+    .btn-reopen   { background: #2a3a50; border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); }
+    .btn-reopen:hover { background: #334560; }
 
     /* new-order flash on entire card */
     .order-card.flash {
