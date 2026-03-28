@@ -783,17 +783,33 @@
         <div class="divider"></div>
 
         <div class="room-section">
-          <label class="room-label" for="roomInput">Room Number</label>
-          <input
-            type="text"
-            inputmode="numeric"
-            pattern="[0-9]*"
-            id="roomInput"
-            class="room-input"
-            placeholder="e.g. 412"
-            maxlength="4"
-            autocomplete="off"
-          />
+          <div style="display:flex;gap:10px;margin-bottom:0;">
+            <div style="flex:0 0 110px;">
+              <label class="room-label" for="roomInput">Room Number</label>
+              <input
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                id="roomInput"
+                class="room-input"
+                placeholder="e.g. 412"
+                maxlength="4"
+                autocomplete="off"
+              />
+            </div>
+            <div style="flex:1;">
+              <label class="room-label" for="lastNameInput">Last Name</label>
+              <input
+                type="text"
+                id="lastNameInput"
+                class="room-input"
+                placeholder="e.g. Smith"
+                maxlength="40"
+                autocomplete="family-name"
+                autocapitalize="words"
+              />
+            </div>
+          </div>
           <textarea
             id="notesInput"
             class="notes-input"
@@ -821,13 +837,13 @@
        4. Set rules to allow read/write (or use the rules in README.md)
     ═══════════════════════════════════════════════════════════════════ */
     const FIREBASE_CONFIG = {
-  	apiKey: "AIzaSyCEx7vzUxn6AoVjvnofdBVnLmpp1U-qV9o",
-  	authDomain: "ds-portland-lounge.firebaseapp.com",
-  	projectId: "ds-portland-lounge",
-  	storageBucket: "ds-portland-lounge.firebasestorage.app",
-  	messagingSenderId: "990561515374",
-  	appId: "1:990561515374:web:fb11aecc6368b1e224f37f",
-  	measurementId: "G-H5QNJMD78C"
+      apiKey:            "YOUR_API_KEY",
+      authDomain:        "YOUR_PROJECT.firebaseapp.com",
+      databaseURL:       "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+      projectId:         "YOUR_PROJECT_ID",
+      storageBucket:     "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId:             "YOUR_APP_ID"
     };
 
     /* ════════════════════════════════════════════════════════════════
@@ -1191,6 +1207,16 @@
         return;
       }
 
+      const lastNameInput = document.getElementById("lastNameInput");
+      const lastName = lastNameInput.value.trim();
+
+      if (!lastName) {
+        lastNameInput.focus();
+        lastNameInput.style.borderColor = "#cc0000";
+        setTimeout(() => lastNameInput.style.borderColor = "", 1500);
+        return;
+      }
+
       const btn = document.getElementById("submitBtn");
       btn.disabled = true;
       btn.textContent = "Sending…";
@@ -1224,10 +1250,11 @@
 
       const order = {
         room,
+        lastName,
         items,
         notes,
         total: totalPrice(),
-        status: "new",                         // new | in-progress | complete
+        status: "new",
         createdAt: Date.now(),
         createdAtISO: new Date().toISOString()
       };
@@ -1260,7 +1287,7 @@
     function showConfirmation(order) {
       const count = order.items.reduce((a, i) => a + i.qty, 0);
       document.getElementById("confirmDetail").textContent =
-        `Room ${order.room} · ${count} item${count !== 1 ? "s" : ""} · $${order.total.toFixed(2)}`;
+        `Room ${order.room} · ${order.lastName} · ${count} item${count !== 1 ? "s" : ""} · $${order.total.toFixed(2)}`;
 
       document.getElementById("mainContent").style.display = "none";
       document.getElementById("heroSection").style.display = "none";
@@ -1270,10 +1297,10 @@
 
     function resetApp() {
       cart = {};
-      // Reset toggle selections
       Object.keys(selectedOption).forEach(k => delete selectedOption[k]);
 
       document.getElementById("roomInput").value = "";
+      document.getElementById("lastNameInput").value = "";
       document.getElementById("notesInput").value = "";
       document.getElementById("submitBtn").disabled = false;
       document.getElementById("submitBtn").textContent = "Place Order";
