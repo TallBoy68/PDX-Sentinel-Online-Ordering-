@@ -740,6 +740,85 @@
     }
 
     /* ════════════════════════════════════════════════════════════════
+       NIGHTLY ARCHIVE
+       ────────────────────────────────────────────────────────────────
+       Moves completed orders from orders/ to archive/YYYY-MM-DD/
+       in Firebase. Runs at 11pm, and on page load to catch any
+       completed orders from previous days that weren't archived.
+    ═══════════════════════════════════════════════════════════════════ */
+
+    // Format a timestamp as YYYY-MM-DD for archive keys
+    function dateKey(ts) {
+      const d = new Date(ts);
+      return d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+    }
+
+    // Archive all completed orders older than today
+    // (or from any previous day — catches missed nights)
+    async function archiveCompletedOrders() {
+      if (!fbReady || !db) return;
+
+      const todayKey = dateKey(Date.now());
+
+      try {
+        const snap = await db.ref("orders").once("value");
+        if (!snap.exists()) return;
+
+        const updates = {};
+        const toDelete = [];
+
+        snap.forEach(child => {
+          const order = child.val();
+          const key   = child.key;
+
+          // Archive if: completed AND created before today
+          if (order.status === "complete") {
+            const orderDay = dateKey(order.createdAt);
+            if (orderDay < todayKey) {
+              // Write to archive/YYYY-MM-DD/firebaseKey
+              updates[`archive/${orderDay}/${key}`] = order;
+              toDelete.push(key);
+            }
+          }
+        });
+
+        if (toDelete.length === 0) return;
+
+        // Write archive entries then delete from active orders
+        await db.ref().update(updates);
+        for (const key of toDelete) {
+          await db.ref("orders/" + key).remove();
+        }
+
+        console.log(`Archived ${toDelete.length} completed order(s).`);
+      } catch (e) {
+        console.error("Archive error:", e);
+      }
+    }
+
+    // Schedule archive to run at 11pm each night
+    function scheduleNightlyArchive() {
+      const now  = new Date();
+      const next = new Date();
+      next.setHours(23, 0, 0, 0); // 11:00pm tonight
+
+      // If 11pm has already passed today, schedule for tomorrow
+      if (next <= now) next.setDate(next.getDate() + 1);
+
+      const msUntil = next - now;
+
+      setTimeout(() => {
+        archiveCompletedOrders();
+        // Then repeat every 24 hours
+        setInterval(archiveCompletedOrders, 24 * 60 * 60 * 1000);
+      }, msUntil);
+
+      console.log(`Nightly archive scheduled in ${Math.round(msUntil / 60000)} minutes.`);
+    }
+
+    /* ════════════════════════════════════════════════════════════════
        UTILITY
     ═══════════════════════════════════════════════════════════════════ */
     function escapeHtml(str) {
@@ -755,6 +834,12 @@
     ═══════════════════════════════════════════════════════════════════ */
     initFirebase();
     renderAll();
+
+    // Run archive on load (catches previous days) then schedule nightly
+    if (fbReady) {
+      archiveCompletedOrders();
+      scheduleNightlyArchive();
+    }
   </script>
 </body>
 </html>
