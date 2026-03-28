@@ -673,7 +673,7 @@
         <div class="order-card-header">
           <div>
             <div class="order-room">${escapeHtml(order.room)}</div>
-            <div class="order-room-label">Room</div>
+            <div class="order-room-label">${order.lastName ? escapeHtml(order.lastName) : "Room"}</div>
           </div>
           <div class="order-time">
             ${time}
